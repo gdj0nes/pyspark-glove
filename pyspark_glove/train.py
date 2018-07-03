@@ -24,7 +24,7 @@ Array = np.ndarray
 
 
 def main():
-  #
+
   parser = argparse.ArgumentParser()
   parser.add_argument('-n', '--num_iterations', default=20, type=int)
   parser.add_argument('-s', '--vector_size', default=10, type=int)
@@ -36,9 +36,6 @@ def main():
 
   args = parser.parse_args()
 
-  if (args.alpha > 1) or (args.alpha < 0):
-    raise ValueError('Alpha should be between 0 and 1')
-
   # Spark initialization
   conf = SparkConf().setAll(
     [('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')])
@@ -46,7 +43,7 @@ def main():
   sqlctx = SQLContext(sc)
   sc.setLogLevel('warn')
 
-  # Data
+  # Make co-occurence dataset
   raw_data = sqlctx.read.parquet(args.input_path)
   cooc_entries = (
     raw_data
@@ -57,16 +54,16 @@ def main():
       .reduceByKey(lambda x, y: x + y)
   )
 
-  items_vectors, items_biases, vector_grads, bias_grads = train_glove(spark=sc,
-                                                                      word_cooc=cooc_entries,
-                                                                      max_value=args.max_value,
-                                                                      num_iterations=args.num_iterations,
-                                                                      learning_rate=args.learning_rate,
-                                                                      vector_size=args.vector_size,
-                                                                      alpha=args.alpha
-                                                                      )
+  word_vectors, word_biases = train_glove(spark=sc,
+                                          word_cooc=cooc_entries,
+                                          max_value=args.max_value,
+                                          num_iterations=args.num_iterations,
+                                          learning_rate=args.learning_rate,
+                                          vector_size=args.vector_size,
+                                          alpha=args.alpha)
   sc.stop()
-  return
+
+  return word_vectors, word_biases
 
 
 if __name__ == '__main__':

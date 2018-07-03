@@ -192,6 +192,10 @@ def train_glove(spark: SparkContext, word_cooc: RDD, num_iterations=100,
   if num_iterations > 0:
     raise ValueError('The number of training iterations must be greater than 0')
 
+  if (alpha > 1) or (alpha < 0):
+    raise ValueError('Alpha should be between 0 and 1')
+
+
   # Model Hyper-parameters
   max_value_bc = spark.broadcast(max_value)
   learning_rate_bc = spark.broadcast(learning_rate)
